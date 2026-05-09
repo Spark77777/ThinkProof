@@ -12,8 +12,9 @@ const expectedSteps = [
     'x = 20'
 ];
 
-// Add step input
+// Add new step input
 addStepBtn.addEventListener('click', () => {
+
     stepCount++;
 
     const stepDiv = document.createElement('div');
@@ -25,17 +26,42 @@ addStepBtn.addEventListener('click', () => {
     `;
 
     stepsContainer.appendChild(stepDiv);
+
 });
 
-// Normalize equation
-function normalize(str) {
-    return str
-        .replace(/\s+/g, '')
-        .replace(/\*/g, '')
-        .toLowerCase();
+// Check if two equations are mathematically equivalent
+function isEquivalent(eq1, eq2) {
+
+    try {
+
+        // Split equations into left and right
+        const [left1, right1] = eq1.split('=');
+        const [left2, right2] = eq2.split('=');
+
+        // Convert equations into expressions
+        const expr1 = math.simplify(`(${left1}) - (${right1})`);
+        const expr2 = math.simplify(`(${left2}) - (${right2})`);
+
+        // Test equivalence using sample x value
+        const testValue = { x: 5 };
+
+        const difference = math.evaluate(
+            `(${expr1}) - (${expr2})`,
+            testValue
+        );
+
+        return difference === 0;
+
+    } catch (error) {
+
+        console.error(error);
+
+        return false;
+    }
+
 }
 
-// Evaluate steps
+// Submit solution
 submitBtn.addEventListener('click', () => {
 
     const inputs = document.querySelectorAll('.step-input');
@@ -49,32 +75,55 @@ submitBtn.addEventListener('click', () => {
     let valid = true;
     let errorStep = -1;
 
+    // Check each expected step
     for (let i = 0; i < expectedSteps.length; i++) {
 
+        // Missing step
         if (!studentSteps[i]) {
             valid = false;
             errorStep = i + 1;
             break;
         }
 
-        if (normalize(studentSteps[i]) !== normalize(expectedSteps[i])) {
+        // Mathematical equivalence check
+        if (!isEquivalent(studentSteps[i], expectedSteps[i])) {
             valid = false;
             errorStep = i + 1;
             break;
         }
+
     }
 
+    // Extra unnecessary steps
+    if (studentSteps.length > expectedSteps.length) {
+
+        for (let i = expectedSteps.length; i < studentSteps.length; i++) {
+
+            if (studentSteps[i].trim() !== '') {
+                valid = false;
+                errorStep = i + 1;
+                break;
+            }
+
+        }
+
+    }
+
+    // Display result
     if (valid) {
+
         resultBox.innerHTML = `
             <p class="valid">✅ Valid</p>
             <p>Your reasoning is correct.</p>
         `;
-    }
-    else {
+
+    } else {
+
         resultBox.innerHTML = `
             <p class="invalid">❌ Not Valid</p>
             <p>Check Step ${errorStep} carefully.</p>
         `;
+
     }
 
 });
